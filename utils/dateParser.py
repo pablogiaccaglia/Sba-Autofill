@@ -19,7 +19,6 @@ def dateParser(res):
     if parsedDay[0]==0 :
         day=parsedDay[1]
 
-
     resPardesed = [month, day]
     return resPardesed
 
