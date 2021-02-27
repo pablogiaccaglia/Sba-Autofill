@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+"""
+@author: pablo
+
+"""
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from collections import namedtuple
 import constants as c
