@@ -1,4 +1,3 @@
-#!/home/michaelfareshi/.virtualenvs/myvenv/bin/python3.8
 # -*- coding: utf-8 -*-
 """
 @author: pablo
