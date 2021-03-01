@@ -21,8 +21,6 @@ from mail_checker import email_validator
 import constants as c
 
 
-# serve per visualizzare i termini {year, month, day} in italiano
-
 class SbaBot:
 
     def __init__(self, token):
