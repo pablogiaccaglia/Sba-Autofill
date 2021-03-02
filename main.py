@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     # Create the Updater and pass it your bot's token.
-    TOKEN = "1433521764:AAHJCPsVnRraDBY0bkxRYhFGpKRfUCgLvWs"
+    TOKEN = "your token here"
 
     bot = SbaBot(TOKEN)
     # Set up third level ConversationHandler (collecting sub/booking features)
