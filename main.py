@@ -10,8 +10,7 @@ from telegram.ext import CommandHandler, CallbackQueryHandler, ConversationHandl
 from telegram_bot_calendar import DetailedTelegramCalendar
 import logging
 
-
-import constants as c
+from utils import const as c
 from BotClass import SbaBot
 
 # Enable logging
@@ -25,6 +24,7 @@ def main():
     TOKEN = "your token here"
 
     bot = SbaBot(TOKEN)
+
     # Set up third level ConversationHandler (collecting sub/booking features)
     add_user_to_database = ConversationHandler(
         entry_points=[CallbackQueryHandler(bot.update_database, pattern='^' + str(c.COMPLETE_SUB) + '$')],
@@ -35,16 +35,15 @@ def main():
         },
 
         fallbacks=[CallbackQueryHandler(bot.back_to_main_menu, pattern='^' + str(c.BACK) + '$'),
-        CommandHandler('stop', bot.stop_nested),
-        ],
+                   CommandHandler('stop', bot.stop_nested),
+                   ],
 
         map_to_parent={
             c.BACK: c.BACK,
-            c.STOPPING : c.STOPPING,
+            c.STOPPING: c.STOPPING,
         },
 
     )
-
 
     delete_user_from_db = ConversationHandler(
         entry_points=[MessageHandler(Filters.text & ~Filters.command, bot.delete_user)],
@@ -54,14 +53,14 @@ def main():
         },
 
         fallbacks=[
-            #CallbackQueryHandler(bot.back_to_main_menu, pattern='^' + str(c.BACK) + '$'),
-            #CommandHandler('stop', bot.stop_nested),
+            # CallbackQueryHandler(bot.back_to_main_menu, pattern='^' + str(c.BACK) + '$'),
+            # CommandHandler('stop', bot.stop_nested),
         ],
 
         map_to_parent={
             c.DELETE_USER: c.DELETE_USER,
             c.END: c.END,
-            c.STOPPING : c.END,
+            c.STOPPING: c.END,
 
         },
 
@@ -83,7 +82,7 @@ def main():
         fallbacks=[
             CallbackQueryHandler(bot.back_to_main_menu, pattern='^' + str(c.BACK) + '$'),
             CallbackQueryHandler(bot.autofiller_options, pattern='^' + str(c.SUB_MENU) + '$'),
-            #CallbackQueryHandler(bot.autofiller_options, pattern='^' + str(c.RESTART) + '$'),
+            # CallbackQueryHandler(bot.autofiller_options, pattern='^' + str(c.RESTART) + '$'),
             CallbackQueryHandler(bot.ask_for_hall, pattern='^' + str(c.CHANGE_HALL) + '$'),
             CallbackQueryHandler(bot.ask_for_name, pattern='^' + str(c.CONFIRM_HALL) + '$'),
             CommandHandler('stop', bot.stop_nested),
@@ -91,8 +90,9 @@ def main():
         map_to_parent={
             # Return to top level menu
             c.END: c.COLLECT_HALL_INFO,
+
             # End conversation alltogether
-            c.SELECTING_OPTION : c.SELECTING_OPTION,
+            c.SELECTING_OPTION: c.SELECTING_OPTION,
             c.STOPPING: c.END,
             c.COLLECT_HALL_INFO: c.COLLECT_HALL_INFO,
             c.COLLECT_USER_DATA: c.COLLECT_USER_DATA,
@@ -122,7 +122,9 @@ def main():
 
             ],
             c.COLLECT_HALL_INFO: [CallbackQueryHandler(bot.ask_for_hall,
-                                                     pattern='^' + str(c.MODIFY) + '$|^' + str(c.NEW_SUB) + '$|^' + str(c.SELF_SUB) + '$|^' + str(c.COLLECT_HALL_INFO) + '$')],
+                                                       pattern='^' + str(c.MODIFY) + '$|^' + str(
+                                                           c.NEW_SUB) + '$|^' + str(c.SELF_SUB) + '$|^' + str(
+                                                           c.COLLECT_HALL_INFO) + '$')],
             c.COLLECT_USER_DATA: user_info_handlers,
             c.COLLECT_DATE: [CallbackQueryHandler(bot.date_handler, DetailedTelegramCalendar().func())],
             c.DELETE_USER: delete_user_handlers,

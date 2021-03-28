@@ -12,13 +12,14 @@ from telegram.ext import Updater, CallbackContext
 from telegram_bot_calendar import DetailedTelegramCalendar
 from telegram.bot import Bot
 import time
+
 # From Package
-import keyboards
-from bot_main import fillerUserData
-from dateParser import dateParser
-from telegram_users_database import UsersDatabase
-from mail_checker import email_validator
-import constants as c
+from utils import keyboards
+from utils import date_parser
+from utils import mail_checker
+from utils import const as c
+from fillscripts import single_booking
+from database import telegram_users_database
 
 
 class SbaBot:
@@ -92,7 +93,7 @@ class SbaBot:
         else:
 
             res = str(result)  # data scelta dall'utente = str(result)
-            parsedRes = dateParser(res)
+            parsedRes = date_parser.dateParser(res)
 
             context.user_data[c.MONTH] = parsedRes[0]
             context.user_data[c.DAY] = parsedRes[1]
@@ -104,7 +105,7 @@ class SbaBot:
 
         return c.COLLECT_HALL_INFO
 
-    def ask_for_hall(self,update: Update, context: CallbackContext) -> None:
+    def ask_for_hall(self, update: Update, context: CallbackContext) -> None:
 
         query = update.callback_query
         querydata = query.data
@@ -119,7 +120,7 @@ class SbaBot:
 
         return c.COLLECT_USER_DATA
 
-    def hall_confirmation(self,update: Update, context: CallbackContext) -> None:
+    def hall_confirmation(self, update: Update, context: CallbackContext) -> None:
 
         query = update.callback_query
         querydata = int(query.data)
@@ -139,14 +140,14 @@ class SbaBot:
 
         return c.COLLECT_NAME
 
-    def ask_for_name(self,update: Update, context: CallbackContext) -> None:
+    def ask_for_name(self, update: Update, context: CallbackContext) -> None:
 
         text = "Inserisci il tuo nome e cognome ✏:"
         self.__editMessage(update, text)
         # next state in conversation
         return c.COLLECT_EMAIL
 
-    def ask_for_email(self,update: Update, context: CallbackContext) -> None:
+    def ask_for_email(self, update: Update, context: CallbackContext) -> None:
 
         context.user_data[c.NAME] = update.message.text
         text = "Scrivimi la tua mail✉"
@@ -156,11 +157,11 @@ class SbaBot:
 
         return c.COLLECT_ID
 
-    def ask_for_id(self,update: Update, context: CallbackContext) -> None:
+    def ask_for_id(self, update: Update, context: CallbackContext) -> None:
 
         self.__deleteLastMessages(context, update)
 
-        if email_validator(update.message.text):
+        if mail_checker.email_validator(update.message.text):
 
             context.user_data[c.MAIL] = update.message.text
 
@@ -176,7 +177,7 @@ class SbaBot:
 
             return c.COLLECT_ID
 
-    def ask_for_phone(self,update: Update, context: CallbackContext) -> None:
+    def ask_for_phone(self, update: Update, context: CallbackContext) -> None:
 
         self.__deleteLastMessages(context, update)
 
@@ -202,7 +203,7 @@ class SbaBot:
 
             return c.COLLECT_PHONE
 
-    def confirm_data(self,update: Update, context: CallbackContext) -> None:
+    def confirm_data(self, update: Update, context: CallbackContext) -> None:
 
         self.__deleteLastMessages(context, update)
         context.user_data[c.PHONE] = update.message.text
@@ -219,8 +220,8 @@ class SbaBot:
 ✍Telefono: {}
 
 "Dimmi cosa fare👇""".format(context.user_data[c.LIBRARY], context.user_data[c.HALL], context.user_data[c.MONTH],
-                                 context.user_data[c.DAY], context.user_data[c.NAME], context.user_data[c.ID],
-                                 context.user_data[c.MAIL], context.user_data[c.PHONE])
+                             context.user_data[c.DAY], context.user_data[c.NAME], context.user_data[c.ID],
+                             context.user_data[c.MAIL], context.user_data[c.PHONE])
 
         if context.user_data[c.NEW_USER] > 0:
             keyboard = keyboards.subConfirmationKeyboard
@@ -231,9 +232,9 @@ class SbaBot:
             self.__sendMessage(context, msg, keyboard)
             return c.BOOKING_CONFIRMATION
 
-    def update_database(self,update: Update, context: CallbackContext) -> None:
+    def update_database(self, update: Update, context: CallbackContext) -> None:
 
-        users = UsersDatabase.get_users()
+        users = telegram_users_database.UsersDatabase.get_users()
         user_id = [i['user_id'] for i in users]
         students_ids = [j['CodMatricola'] for j in users]
         user_flag = context.user_data[c.NEW_USER]
@@ -246,19 +247,18 @@ class SbaBot:
         library = context.user_data[c.LIBRARY]
         hall = context.user_data[c.HALL]
 
-        # user requests to sub but it's already in database
+        # user requests to sub but it's already in sss
         if chat_id in user_id and user_flag == 1 and student_id in students_ids:
             text = "Sei già registrato!😅, cosa vuoi fare?"
             keyboard = keyboards.modifySubKeyboard
-            self.__editMessage(update, text,keyboard)
+            self.__editMessage(update, text, keyboard)
             context.user_data[c.NEW_USER] = 0
 
             return c.MODIFY_DATA
 
         else:
-            keyboard = keyboards.completedActionKeyboard
 
-            # modify user data in database
+            # modify user data in sss
             if chat_id in user_id and user_flag == 2 and student_id in students_ids:
                 UsersDatabase.delete_user(student_id)
                 UsersDatabase.add_user(name, email, student_id, phone, library, hall, chat_id)
@@ -271,7 +271,7 @@ class SbaBot:
 
                 text = "Non eri iscritto! Non ti preoccupare, registrazione completata ✔️alle 00:00 avverà la prima prenotazione!"
 
-            # new user in database
+            # new user in sss
             if student_id not in students_ids and user_flag == 1:
                 UsersDatabase.add_user(name, email, student_id, phone, library, hall, chat_id)
 
@@ -281,7 +281,7 @@ class SbaBot:
             self.__editMessage(update, text, keyboard)
             return c.END
 
-    def modify_user_data(self,update: Update, context: CallbackContext) -> None:
+    def modify_user_data(self, update: Update, context: CallbackContext) -> None:
 
         users = UsersDatabase.get_users()
         students_ids = [i['CodMatricola'] for i in users]
@@ -305,7 +305,7 @@ class SbaBot:
 
         return c.END
 
-    def id_to_delete(self,update: Update, context: CallbackContext) -> None:
+    def id_to_delete(self, update: Update, context: CallbackContext) -> None:
 
         text = "Inserisci il tuo codice matricola👇:"
         # update.callback_query.answer()
@@ -313,7 +313,7 @@ class SbaBot:
 
         return c.DELETE_USER
 
-    def delete_user(self,update: Update, context: CallbackContext) -> None:
+    def delete_user(self, update: Update, context: CallbackContext) -> None:
 
         self.__deleteLastMessages(context, update)
 
@@ -350,7 +350,7 @@ class SbaBot:
         day = context.user_data[c.DAY]
         month = context.user_data[c.MONTH]
 
-        val = fillerUserData(library, hall, day, month, name, email, student_id, phone)
+        val = single_booking.fillerUserData(library, hall, day, month, name, email, student_id, phone)
 
         keyboard = keyboards.completedActionKeyboard
 
@@ -366,18 +366,18 @@ class SbaBot:
         # sent_message = update.message.reply_text("🤔Cosa vuoi fare?🤔", reply_markup = keyboard)
         # telegram.bot.Bot.delete_message(context.bot,chat_id=context.user_data[CHAT_ID], message_id=context.user_data[MSG_ID])
 
-        #context.user_data[c.MSG_ID] = sent_message.message_id
+        # context.user_data[c.MSG_ID] = sent_message.message_id
 
         return c.END
 
-    def get_user_info(self, update: Update, context: CallbackContext) ->None:
+    def get_user_info(self, update: Update, context: CallbackContext) -> None:
 
         student_id = context.user_data[c.CHAT_ID]
         user_info = UsersDatabase.get_user(student_id)
 
-        text ="Ecco i tuoi dati: \n\n"
+        text = "Ecco i tuoi dati: \n\n"
 
-        for sub in user_info :
+        for sub in user_info:
             msg = """⚈Nome: {}
 ⚈Matricola: {}
 ⚈Mail: {}
@@ -386,13 +386,11 @@ class SbaBot:
 ⚈Aula: {}
 ---------------------------------------
 """.format(sub["Nome"], sub["CodMatricola"], sub["Mail"],
-                                     sub["Telefono"], sub["Biblioteca"], sub["Aula"])
+           sub["Telefono"], sub["Biblioteca"], sub["Aula"])
             text = text + msg
 
         keyboard = keyboards.completedActionKeyboard
         self.__editMessage(update, text, keyboard)
-
-
 
     def back_to_main_menu(self, update: Update, context: CallbackContext) -> None:
         """Return to main menu"""
@@ -400,7 +398,6 @@ class SbaBot:
         self.start(update, context)
 
         return c.SELECTING_OPTION
-
 
     def stop_nested(self, update: Update, context: CallbackContext) -> None:
 
@@ -412,7 +409,6 @@ class SbaBot:
         self.__sendMessage(context, text)
 
         return c.STOPPING
-
 
     def stop_bot(self, update: Update, context: CallbackContext) -> None:
         """Completely end conversation"""
